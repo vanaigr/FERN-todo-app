@@ -3,11 +3,12 @@ import './App.css'
 import * as auth from './auth.js'
 
 export function AccountHeader() {
-    const [account, setAccount] = R.useState(auth.getAccount())
-    console.log(account)
+    console.log('header')
+    const account = auth.useAccount(it => it)
+
     let child;
-    if(!account || !account.ok) {
-        child = <button onClick={() => { auth.authenticate().finally(() => setAccount(auth.getAccount())) }}>Sign in with Google</button>
+    if(!account.ok) {
+        child = <button onClick={auth.authenticate}>Sign in with Google</button>
     }
     else {
         child = `Signed in as ${account.user.displayName}`
@@ -17,6 +18,7 @@ export function AccountHeader() {
 }
 
 export default function App() {
+    console.log('app')
     return (
         <div className="header">
             <AccountHeader />
