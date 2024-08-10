@@ -12,6 +12,7 @@ export function AccountHeader() {
     else {
         child = (<>
             Signed in as {account.user.displayName}
+            <div className="v-bar" />
             <button onClick={auth.logout}>log out</button>
         </>)
     }
@@ -23,6 +24,7 @@ export default function App() {
     console.log('app')
     return (
         <div className="header">
+            <div className="title">FERN TO-DO App</div>
             <AccountHeader />
         </div>
     )
