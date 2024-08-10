@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app"
 import * as firebaseAuth from "firebase/auth"
-import * as firebaseUi from "firebaseui"
 import { create } from "zustand"
 
 export const serverUrl = 'http://localhost:2999'
@@ -20,7 +19,7 @@ const auth = firebaseAuth.getAuth(app)
 
 export const useAccount = create((set) => ({}))
 
-export async function authenticate() {
+export async function login() {
     try {
         const result = await firebaseAuth.signInWithPopup(auth, new firebaseAuth.GoogleAuthProvider())
         const credential = firebaseAuth.GoogleAuthProvider.credentialFromResult(result)
@@ -31,4 +30,9 @@ export async function authenticate() {
         console.error(e)
         useAccount.setState({ ok: false })
     }
+}
+
+export async function logout() {
+    await firebaseAuth.signOut(auth).catch(e => console.error(e))
+    useAccount.setState({ ok: false })
 }

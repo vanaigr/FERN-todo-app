@@ -3,15 +3,17 @@ import './App.css'
 import * as auth from './auth.js'
 
 export function AccountHeader() {
-    console.log('header')
     const account = auth.useAccount(it => it)
 
     let child;
     if(!account.ok) {
-        child = <button onClick={auth.authenticate}>Sign in with Google</button>
+        child = <button onClick={auth.login}>Sign in with Google</button>
     }
     else {
-        child = `Signed in as ${account.user.displayName}`
+        child = (<>
+            Signed in as {account.user.displayName}
+            <button onClick={auth.logout}>log out</button>
+        </>)
     }
 
     return <div className="account">{child}</div>
