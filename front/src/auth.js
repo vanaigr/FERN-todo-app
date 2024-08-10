@@ -24,15 +24,14 @@ export async function login() {
         const result = await firebaseAuth.signInWithPopup(auth, new firebaseAuth.GoogleAuthProvider())
         const credential = firebaseAuth.GoogleAuthProvider.credentialFromResult(result)
         const token = credential.accessToken
-        console.log(useAccount.account)
-        useAccount.setState({ ok: true, user: result.user, token })
+        useAccount.setState({ ok: true, user: result.user, token }, true)
     } catch(e) {
         console.error(e)
-        useAccount.setState({ ok: false })
+        useAccount.setState({ ok: false }, true)
     }
 }
 
 export async function logout() {
     await firebaseAuth.signOut(auth).catch(e => console.error(e))
-    useAccount.setState({ ok: false })
+    useAccount.setState({ ok: false }, true)
 }
