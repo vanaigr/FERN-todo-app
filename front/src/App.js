@@ -1,14 +1,30 @@
 import * as R from 'react'
 import './App.css'
-import * as db from './db.js'
+import * as auth from './auth.js'
 
-function Status({ status }) {
-    if(!status) return
+export function AccountHeader() {
+    const [account, setAccount] = R.useState(auth.getAccount())
+    console.log(account)
+    let child;
+    if(!account || !account.ok) {
+        child = <button onClick={() => { auth.authenticate().finally(() => setAccount(auth.getAccount())) }}>Sign in with Google</button>
+    }
+    else {
+        child = `Signed in as ${account.user.displayName}`
+    }
 
-    return <div>{status}</div>
+    return <div className="account">{child}</div>
 }
 
-function App() {
+export default function App() {
+    return (
+        <div className="header">
+            <AccountHeader />
+        </div>
+    )
+}
+
+/*
     const [status, setStatus] = R.useState(null)
 
     const nameR = R.useRef(null)
@@ -43,6 +59,4 @@ function App() {
             <Status status={status} />
         </>
     );
-}
-
-export default App;
+*/
