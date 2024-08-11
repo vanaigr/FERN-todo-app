@@ -70,7 +70,12 @@ function DeleteButton() {
 }
 
 function Todos() {
-    const todosArr = todos.useMapTodos(it => <Todo key={it.id} todo={it} />)
+    const todosOrdered = todos.useTodosOrdered()
+    const todosArr = new Array(todosOrdered.length)
+    for(var i = 0; i < todosOrdered.length; i++) {
+        const it = todosOrdered[i]
+        todosArr[todosOrdered.length-1 - i] = <Todo key={it.id} todo={it} />
+    }
     return <div className="todo-area">
         <div className="todo-buttons">
             <button onClick={() => selectedTodoStorage.setState(todos.addTodo().id)}>Add</button>

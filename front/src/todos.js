@@ -26,9 +26,9 @@ export function onTodosChanged(cb) {
     return useTodosTick.subscribe(() => cb())
 }
 
-export function useMapTodos(mapper) {
+export function useTodosOrdered() {
     useTodosTick(it => it.tick)
-    return todosOrder.map(id => mapper(todos[id]))
+    return todosOrder
 }
 
 export function addTodo() {
@@ -42,14 +42,15 @@ export function addTodo() {
         })),
     }
     todos[id] = todo
-    todosOrder.push(id)
+    todosOrder.push(todo)
     tick()
     return todo
 }
 
 export function removeTodo(id) {
+    const todo = todos[id]
     delete todos[id]
-    const i = todosOrder.indexOf(id)
+    const i = todosOrder.indexOf(todo)
     if(i !== -1) todosOrder.splice(i, 1)
     tick()
 }
