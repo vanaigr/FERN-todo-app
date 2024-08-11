@@ -2,8 +2,6 @@ import { initializeApp } from "firebase/app"
 import * as firebaseAuth from "firebase/auth"
 import { create } from "zustand"
 
-export const serverUrl = 'http://localhost:2999'
-
 const firebaseConfig = {
   apiKey: "AIzaSyAgUq87gB8lXUL8UtYqnloosoH3sVp8yAk",
   authDomain: "fern-test-d7b52.firebaseapp.com",
