@@ -54,14 +54,13 @@ export function removeTodo(id) {
     tick()
 }
 
-
-function genUUID() {
+export function genUUID() {
     // note: assumes .export() is little-endian. This should not matter any way
     const arr = new UUID(4).export()
     if(arr.length != 16) throw "Unknown uuid"
-    var res = BigInt(arr[0])
-    for(let i = 1; i < 16; i++) {
-        res |= BigInt(arr[i]) << BigInt(i * 8)
+    var res = ''
+    for(var i = 0; i < 8; i++) {
+        res += String.fromCharCode(arr[2*i] | (arr[2*i + 1] << 8))
     }
     return res
 }

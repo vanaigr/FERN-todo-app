@@ -99,6 +99,9 @@ function ContentEditable({ value, onInput, className, contentEditable }) {
 }
 
 function TodoEditArea({ uid }) {
+    if(uid === null) {
+        return <ContentEditable className="edit-area" contentEditable="false" />
+    }
     // note: hook is different per id, so this is a separate component to avoid bugs
     const contents = todos.getTodo(uid).useContent(it => it)
 
@@ -111,12 +114,7 @@ function TodoEditArea({ uid }) {
 
 function EditArea() {
     const selectedId = selectedTodoStorage(it => it)
-    if(selectedId === null) {
-        return <ContentEditable className="edit-area" contentEditable="false" />
-    }
-    else {
-        return <TodoEditArea key={selectedId} uid={selectedId} />
-    }
+    return <TodoEditArea key={selectedId} uid={selectedId} />
 }
 
 function Content() {
