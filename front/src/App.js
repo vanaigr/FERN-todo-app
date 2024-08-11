@@ -23,9 +23,9 @@ function AccountHeader() {
 }
 
 const selectedTodoStorage = create(set => null)
-todos.onTodosChanged(() => {
+todos.onTodosListChanged(() => {
     const cur = selectedTodoStorage.getState()
-    if(cur && todos.getTodo(cur) === undefined) selectedTodoStorage.setState(null)
+    if(cur && todos.todos[cur] === undefined) selectedTodoStorage.setState(null)
 })
 function useIsTodoSelected(id) {
     const isSelected = selectedTodoStorage(it => it === id)
@@ -46,7 +46,7 @@ function formatTodoDate(date) {
 
 function Todo({ todo }) {
     const [isSelected, setSelected] = useIsTodoSelected(todo.id)
-    const content = todo.useContent(it => it.content.substring(0, 60))
+    const content = todo.useContents(it => it.content.substring(0, 60))
 
     var desc
     if(!content) {
@@ -108,7 +108,7 @@ function TodoEditArea({ uid }) {
         return <ContentEditable className="edit-area" contentEditable="false" />
     }
     // note: hook is different per id, so this is a separate component to avoid bugs
-    const contents = todos.getTodo(uid).useContent(it => it)
+    const contents = todos.todos[uid].useContents(it => it)
 
     function changed(content) {
         contents.updContent(content)

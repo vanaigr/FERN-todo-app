@@ -1,13 +1,11 @@
-/* global BigInt */
-
 import { create } from "zustand"
-import * as UUID from 'pure-uuid'
+import * as UUID from "pure-uuid"
 
 const serverUrl = 'http://localhost:2999'
 
 
-const todosOrder = []
-const todos = {}
+export var todosOrder = []
+export var todos = {}
 
 // note: tick allows to mutate todos list but still trigger updates when needed
 const useTodosTick = create(set => ({
@@ -18,12 +16,26 @@ function tick() {
     useTodosTick.getState().updated()
 }
 
-export function getTodo(id) {
-    return todos[id]
+const todosChangedCallbacks = []
+var todosChangedTick = 0 // tick for every update, not just the list
+function todosChanged() {
+    todosChangedTick++
+    todosChangedCallbacks.forEach(it => {
+        try { it(todosChangedTick) } catch(e) { console.error(e) }
+    })
+}
+useTodosTick.subscribe(todosChanged)
+
+export function getTodosChangedTick() {
+    return todosChangedTick
+}
+
+export function onTodosListChanged(cb) {
+    return useTodosTick.subscribe(() => cb())
 }
 
 export function onTodosChanged(cb) {
-    return useTodosTick.subscribe(() => cb())
+    todosChangedCallbacks.push(cb)
 }
 
 export function useTodosOrdered() {
@@ -31,16 +43,28 @@ export function useTodosOrdered() {
     return todosOrder
 }
 
+export class Todo {
+    constructor(id, rev, content, createdAt) {
+        this.id = id
+        this.rev = rev
+        this.createdAt = createdAt
+        this.useContents = create(set => ({
+            content, rev,
+            updContent: (newContent) => set({ content: newContent, rev: genUUID() }),
+        }))
+
+        this.useContents.subscribe(todosChanged)
+    }
+
+    get contents() {
+        return this.useContents.getState()
+    }
+}
+
 export function addTodo() {
     const id = genUUID()
     const rev = genUUID()
-    const todo = {
-        id, createdAt: new Date(),
-        useContent: create(set => ({
-            content: '', rev,
-            updContent: (newContent) => set({ content: newContent, rev: genUUID() }),
-        })),
-    }
+    const todo = new Todo(id, rev, '', new Date())
     todos[id] = todo
     todosOrder.push(todo)
     tick()
@@ -54,6 +78,21 @@ export function removeTodo(id) {
     if(i !== -1) todosOrder.splice(i, 1)
     tick()
 }
+
+export function setTodos(newTodos) {
+    const newTodosOrder = []
+    for(var id in newTodos) {
+        const todo = newTodos[id]
+        newTodosOrder.push(todo)
+    }
+    newTodosOrder.sort((a, b) => a.createdAt - b.createdAt)
+
+    todos = newTodos
+    todosOrder = newTodosOrder
+
+    tick()
+}
+
 
 export function genUUID() {
     // note: assumes .export() is little-endian. This should not matter any way
