@@ -8,7 +8,7 @@ todos.onTodosChanged((tick) => {
     for(var key in todos.allTodos) {
         const it = todos.allTodos[key]
         const contents = it.contents
-        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.synced ? 1 : 0])
+        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.contents.syncedState])
     }
     localStorage.setItem('todos', JSON.stringify(res))
     savedTick = tick
@@ -52,9 +52,9 @@ async function handleSyncResponse(todosRequest, response) {
     const newTodos = {}
     for(const id in result) {
         const r = result[id]
-        const it = orig[id]
+        const it = orig[id] ?? {}
 
-        const itContents = it.contents
+        const itContents = it.contents ?? {}
         newTodos[id] = new todos.Todo(
             id,
             r.rev ?? it.rev,
@@ -76,7 +76,7 @@ export async function syncTodos(idToken) {
         if(it.deleted) {
             todosR.push({ id: it.id })
         }
-        else if(it.syncedState === todos.syncStatus.synced) {
+        else if(it.contents.syncedState === todos.syncStatus.synced) {
             todosR.push({ id: it.id, rev: it.rev })
         }
         else {

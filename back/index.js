@@ -88,12 +88,14 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
         const it = body[i]
         const eid = encodeFirebase(it.id)
         const note = dbNotes[eid]
-        if(note == null && it.rev != null) {
+        if(it.rev != null && it.content != null) {
+            console.log('updated', eid)
             const newNote = { rev: it.rev, content: it.content, createdAt: it.createdAt }
             dbNotes[eid] = newNote
             db.ref('notes/' + uid + '/' + eid).set(newNote)
         }
         else if(note != null && it.rev == null) {
+            console.log('removed', eid)
             delete dbNotes[eid]
             db.ref('notes/' + uid + '/' + eid).remove()
         }

@@ -60,8 +60,11 @@ export class Todo {
         this.createdAt = typeof(createdAt) == 'number' ? new Date(createdAt) : createdAt
         this.useContents = create(set => ({
             content, rev, syncedState,
-            updContent: (newContent) => set({ content: newContent, rev: genUUID() }),
-            updSyncedState: (newState) => set({ syncedState: newState }),
+            updContent: (newContent) => set({
+                content: newContent,
+                rev: genUUID(),
+                syncedState: false,
+            }),
         }))
         this._unsubContents = this.useContents.subscribe(todosChanged)
         this.deleted = false
@@ -91,7 +94,7 @@ export function addTodo() {
 export function removeTodo(id) {
     const todo = allTodos[id]
     if(!todo) return
-    if(todo.syncedState == syncStatus.local) delete allTodos[id]
+    if(todo.contents.syncedState == syncStatus.local) delete allTodos[id]
     const i = currentTodos.indexOf(todo)
     if(i !== -1) currentTodos.splice(i, 1)
     todo.delete()
