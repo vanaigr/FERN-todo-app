@@ -9,7 +9,7 @@ todos.onTodosChanged((tick) => {
     for(var key in todos.allTodos) {
         const it = todos.allTodos[key]
         const contents = it.contents
-        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.contents.syncedState])
+        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.local, it.contents.changed])
     }
     localStorage.setItem('todos', JSON.stringify(res))
     savedTick = tick
@@ -22,10 +22,11 @@ function clearLocalTodos() {
 export function loadLocalTodos() {
     try {
         const newTodosJ = JSON.parse(localStorage.getItem('todos'))
+        if(newTodosJ == null) return
         const newTodos = {}
         for(var i = 0; i < newTodosJ.length; i++) {
             const it = newTodosJ[i]
-            const todo = new todos.Todo(it[0], it[1], it[2], new Date(it[3]), it[5])
+            const todo = new todos.Todo(it[0], it[1], it[2], new Date(it[3]), it[5], false, it[6])
             if(it[4]) todo.delete()
             newTodos[todo.id] = todo
         }
@@ -58,15 +59,13 @@ async function handleSyncResponse(todosRequest, response) {
     for(const id in result) {
         const r = result[id]
         const it = orig[id] ?? {}
+        if(r.content == null) {
+            newTodos[id] = new todos.Todo(id, it.rev, it.contents.content, it.createdAt, false, true, false)
+        }
+        else {
+            newTodos[id] = new todos.Todo(id, r.rev, r.content, r.createdAt, false, true, false)
+        }
 
-        const itContents = it.contents ?? {}
-        newTodos[id] = new todos.Todo(
-            id,
-            r.rev ?? it.rev,
-            r.content ?? itContents.content,
-            r.createdAt ?? it.createdAt,
-            todos.syncStatus.synced
-        )
     }
 
     todos.setTodos(newTodos)
@@ -76,19 +75,24 @@ const serverUrl = 'http://localhost:2999'
 async function syncTodosForToken(idToken) {
     const tds = todos.allTodos
     const todosR = []
+    let notSynced = false
     for(const id in tds) {
         const it = tds[id]
         if(it.deleted) {
+            notSynced = true
             todosR.push({ id: it.id })
         }
-        else if(it.contents.syncedState === todos.syncStatus.synced) {
+        else if(it.contents.synced) {
             todosR.push({ id: it.id, rev: it.rev })
         }
         else {
+            notSynced = true
             const contents = it.contents
             todosR.push({ id: it.id, rev: it.rev, content: contents.content, createdAt: it.createdAt.getTime() })
         }
     }
+
+    if(!notSynced) return
 
     try {
         const response = await fetch(new URL('sync-notes', serverUrl), {
@@ -126,7 +130,6 @@ auth.useAccount.subscribe(it => {
 
 var prevSaveTimer
 function resetAutosave() {
-    console.log('!')
     clearTimeout(prevSaveTimer)
     prevSaveTimer = setTimeout(syncTodos, 1000)
 }

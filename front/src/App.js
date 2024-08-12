@@ -51,7 +51,7 @@ function Todo({ todo }) {
     const [isSelected, setSelected] = useIsTodoSelected(todo.id)
     const contents = todo.useContents(it => it)
     const content = contents.content.substring(0, 60)
-    const isSynced = contents.syncedState == todos.syncStatus.synced
+    const isSynced = contents.synced
 
     var desc
     if(!content) {
