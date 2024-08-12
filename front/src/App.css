@@ -9,6 +9,8 @@ html, body {
 }
 
 .header {
+    position: relative;
+    z-index: 1;
     display: flex;
     padding: 0.5em;
     box-shadow: 0px 0px 0.5em 0em #00000020;
@@ -44,7 +46,17 @@ html, body {
 }
 
 .todo-buttons {
+    display: flex;
     border-bottom: 1px solid gray;
+    background: gray;
+    gap: 1px;
+}
+
+.todo-buttons > button {
+    flex: 1 1 0;
+    border: none;
+    margin: 0;
+    padding: 0.5em;
 }
 
 .todo-area {
