@@ -95,7 +95,7 @@ function Todos() {
     </div>
 }
 
-function ContentEditable({ value, onInput, className, contentEditable }) {
+function ContentEditable({ value, onInput, className, contentEditable, hint }) {
     const thisRef = R.useRef(null)
 
     R.useLayoutEffect(() => {
@@ -105,7 +105,7 @@ function ContentEditable({ value, onInput, className, contentEditable }) {
     })
 
     return (
-        <div className={className} ref={thisRef} onInput={event => onInput(event.target.textContent)}
+        <div className={className} ref={thisRef} data-hint={hint} onInput={event => onInput(event.target.textContent)}
             contentEditable={contentEditable ?? true}
         />
     );
@@ -113,7 +113,7 @@ function ContentEditable({ value, onInput, className, contentEditable }) {
 
 function TodoEditArea({ uid }) {
     if(uid === null) {
-        return <ContentEditable className="edit-area" contentEditable="false" />
+        return <ContentEditable className="edit-area hint" hint="Select a note on the right..." contentEditable="false" />
     }
     // note: hook is different per id, so this is a separate component to avoid bugs
     const contents = todos.allTodos[uid].useContents(it => it)
@@ -122,7 +122,7 @@ function TodoEditArea({ uid }) {
         contents.updContent(content)
     }
 
-    return <ContentEditable className="edit-area editable" onInput={changed} value={contents.content} />
+    return <ContentEditable className="edit-area hint" hint="Type here..." onInput={changed} value={contents.content} />
 }
 
 function EditArea() {

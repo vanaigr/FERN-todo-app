@@ -38,6 +38,11 @@ html, body {
     flex-grow: 1;
 }
 
+.edit-area {
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
 .todo-buttons {
     border-bottom: 1px solid gray;
 }
@@ -103,11 +108,11 @@ html, body {
     height: 100%;
 }
 
-.editable:empty::before {
-    content: "Type here...";
+.hint:empty::before {
+    content: attr(data-hint);
     color: darkslategray;
 }
 
-.editable:focus:empty::before {
+.hint:focus:empty::before {
     content: "";
 }
