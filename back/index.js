@@ -22,10 +22,8 @@ function err(s, details) {
 
 function handleAuth(q, s, n) {
     const token = q.get('Authorization')
-    console.log(token)
     auth.verifyIdToken(token)
         .then(decodedToken => {
-            console.log(decodedToken.uid)
             q.myUid = decodedToken.uid
             n()
         })
@@ -61,7 +59,7 @@ function decodeFirebase(str) {
 app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
     const uid = q.myUid
     const body = q.body
-    console.log(JSON.stringify(body))
+    console.log('Request:', JSON.stringify(body))
 
     const ids = {}
     for(let i = 0; i < body.length; i++) {
@@ -89,13 +87,13 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
         const eid = encodeFirebase(it.id)
         const note = dbNotes[eid]
         if(it.rev != null && it.content != null) {
-            console.log('updated', eid)
+            console.log('  updated', eid)
             const newNote = { rev: it.rev, content: it.content, createdAt: it.createdAt }
             dbNotes[eid] = newNote
             db.ref('notes/' + uid + '/' + eid).set(newNote)
         }
         else if(note != null && it.rev == null) {
-            console.log('removed', eid)
+            console.log('  removed', eid)
             delete dbNotes[eid]
             db.ref('notes/' + uid + '/' + eid).remove()
         }
@@ -119,7 +117,7 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
             }
         }
     }
-    console.log(JSON.stringify(result))
+    console.log('Response:', JSON.stringify(result))
 
     return s.json(result)
 })
