@@ -17,19 +17,19 @@ const auth = firebaseAuth.getAuth(app)
 
 export const useAccount = create((set) => ({}))
 
-export async function login() {
-    try {
-        const result = await firebaseAuth.signInWithPopup(auth, new firebaseAuth.GoogleAuthProvider())
-        const credential = firebaseAuth.GoogleAuthProvider.credentialFromResult(result)
-        const token = credential.accessToken
-        useAccount.setState({ ok: true, user: result.user, token }, true)
-    } catch(e) {
-        console.error(e)
-        useAccount.setState({ ok: false }, true)
-    }
+export function login() {
+    firebaseAuth.signInWithPopup(auth, new firebaseAuth.GoogleAuthProvider())
 }
 
-export async function logout() {
-    await firebaseAuth.signOut(auth).catch(e => console.error(e))
-    useAccount.setState({ ok: false }, true)
+firebaseAuth.onAuthStateChanged(auth, user => {
+    if(user) {
+        useAccount.setState({ ok: true, user }, true)
+    }
+    else {
+        useAccount.setState({ ok: false }, true)
+    }
+})
+
+export function logout() {
+    firebaseAuth.signOut(auth)
 }
