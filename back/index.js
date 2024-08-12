@@ -35,6 +35,21 @@ function handleAuth(q, s, n) {
         })
 }
 
+function encodeFirebase(str) {
+    var r = Buffer.from(str, 'utf16le').toString('base64')
+    r = r.replace(/\//g, '_')
+    const str2 = decodeFirebase(r)
+    if(str !== str2) throw 'buffer encoding is not correct'
+    return r
+}
+
+function decodeFirebase(str) {
+    str = str.replace(/_/g, '/')
+    str = Buffer.from(str, 'base64').toString('utf16le')
+    return str
+}
+
+
 // [{ id: string, rev: string, content: string?, createdAt: number? }]
 // if revision is not present, then remove the note and put null
 // if content is not present, then check if it is up-to-date using `rev`
@@ -46,6 +61,7 @@ function handleAuth(q, s, n) {
 app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
     const uid = q.myUid
     const body = q.body
+    console.log(JSON.stringify(body))
 
     const ids = {}
     for(let i = 0; i < body.length; i++) {
@@ -53,7 +69,6 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
         const id = it.id
         if(ids[id]) return err(s, { msg: 'duplicate id', id })
         ids[id] = i
-
         if(typeof(id) !== 'string' || id === '') return err(s, { msg: 'id must be a non-empty string', i })
 
         const rev = it.rev
@@ -71,21 +86,23 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
     // TODO: is not waiting on database updates appropriate? There's also no transactions...
     for(let i = 0; i < body.length; i++) {
         const it = body[i]
-        const note = dbNotes[it.id]
+        const eid = encodeFirebase(it.id)
+        const note = dbNotes[eid]
         if(note == null && it.rev != null) {
             const newNote = { rev: it.rev, content: it.content, createdAt: it.createdAt }
-            dbNotes[it.id] = newNote
-            db.ref('notes/' + uid + '/' + it.id).set(newNote)
+            dbNotes[eid] = newNote
+            db.ref('notes/' + uid + '/' + eid).set(newNote)
         }
         else if(note != null && it.rev == null) {
-            delete dbNotes[it.id]
-            db.ref('notes/' + uid + '/' + it.id).remove()
+            delete dbNotes[eid]
+            db.ref('notes/' + uid + '/' + eid).remove()
         }
     }
 
     const result = {}
-    for(const id in dbNotes) {
-        const note = dbNotes[id]
+    for(const eid in dbNotes) {
+        const id = decodeFirebase(eid)
+        const note = dbNotes[eid]
         const bi = ids[id]
         if(!bi) {
             result[id] = { rev: note.rev, content: note.content, createdAt: note.createdAt }
@@ -100,6 +117,7 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
             }
         }
     }
+    console.log(JSON.stringify(result))
 
     return s.json(result)
 })
