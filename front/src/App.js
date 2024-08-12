@@ -25,7 +25,10 @@ function AccountHeader() {
 const selectedTodoStorage = create(set => null)
 todos.onTodosListChanged(() => {
     const cur = selectedTodoStorage.getState()
-    if(cur && todos.todos[cur] === undefined) selectedTodoStorage.setState(null)
+    if(cur) {
+        const todo = todos.allTodos[cur]
+        if(todo === undefined || todo.deleted) selectedTodoStorage.setState(null)
+    }
 })
 function useIsTodoSelected(id) {
     const isSelected = selectedTodoStorage(it => it === id)
@@ -70,7 +73,7 @@ function DeleteButton() {
 }
 
 function Todos() {
-    const todosOrdered = todos.useTodosOrdered()
+    const todosOrdered = todos.useCurrentTodos()
     const todosArr = new Array(todosOrdered.length)
     for(var i = 0; i < todosOrdered.length; i++) {
         const it = todosOrdered[i]
@@ -108,7 +111,7 @@ function TodoEditArea({ uid }) {
         return <ContentEditable className="edit-area" contentEditable="false" />
     }
     // note: hook is different per id, so this is a separate component to avoid bugs
-    const contents = todos.todos[uid].useContents(it => it)
+    const contents = todos.allTodos[uid].useContents(it => it)
 
     function changed(content) {
         contents.updContent(content)

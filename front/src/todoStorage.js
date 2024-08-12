@@ -5,10 +5,10 @@ var savedTick
 todos.onTodosChanged((tick) => {
     if(tick === savedTick) return
     const res = []
-    for(var key in todos.todos) {
-        const it = todos.todos[key]
+    for(var key in todos.allTodos) {
+        const it = todos.allTodos[key]
         const contents = it.contents
-        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime()])
+        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0])
     }
     localStorage.setItem('todos', JSON.stringify(res))
     savedTick = tick
@@ -21,6 +21,7 @@ export function loadLocalTodos() {
         for(var i = 0; i < newTodosJ.length; i++) {
             const it = newTodosJ[i]
             const todo = new todos.Todo(it[0], it[1], it[2], new Date(it[3]))
+            if(it[4]) todo.delete()
             newTodos[todo.id] = todo
         }
 

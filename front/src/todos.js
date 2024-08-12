@@ -4,8 +4,8 @@ import * as UUID from "pure-uuid"
 const serverUrl = 'http://localhost:2999'
 
 
-export var todosOrder = []
-export var todos = {}
+export var currentTodos = []
+export var allTodos = {}
 
 // note: tick allows to mutate todos list but still trigger updates when needed
 const useTodosTick = create(set => ({
@@ -38,9 +38,13 @@ export function onTodosChanged(cb) {
     todosChangedCallbacks.push(cb)
 }
 
-export function useTodosOrdered() {
+export function useCurrentTodos() {
     useTodosTick(it => it.tick)
-    return todosOrder
+    return currentTodos
+}
+
+export function useTodo() {
+
 }
 
 export class Todo {
@@ -52,8 +56,13 @@ export class Todo {
             content, rev,
             updContent: (newContent) => set({ content: newContent, rev: genUUID() }),
         }))
+        this._unsubContents = this.useContents.subscribe(todosChanged)
+        this.deleted = false
+    }
 
-        this.useContents.subscribe(todosChanged)
+    delete() {
+        this.deleted = true
+        if(this._unsubContents) this._unsubContents()
     }
 
     get contents() {
@@ -65,30 +74,33 @@ export function addTodo() {
     const id = genUUID()
     const rev = genUUID()
     const todo = new Todo(id, rev, '', new Date())
-    todos[id] = todo
-    todosOrder.push(todo)
+
+    allTodos[id] = todo
+    currentTodos.push(todo)
     tick()
     return todo
 }
 
 export function removeTodo(id) {
-    const todo = todos[id]
-    delete todos[id]
-    const i = todosOrder.indexOf(todo)
-    if(i !== -1) todosOrder.splice(i, 1)
+    const todo = allTodos[id]
+    if(!todo) return
+    const i = currentTodos.indexOf(todo)
+    if(i !== -1) currentTodos.splice(i, 1)
+    todo.delete()
     tick()
 }
 
 export function setTodos(newTodos) {
-    const newTodosOrder = []
+    const newCurrentTodos = []
     for(var id in newTodos) {
         const todo = newTodos[id]
-        newTodosOrder.push(todo)
+        if(!todo.deleted) newCurrentTodos.push(todo)
     }
-    newTodosOrder.sort((a, b) => a.createdAt - b.createdAt)
+    newCurrentTodos.sort((a, b) => a.createdAt - b.createdAt)
 
-    todos = newTodos
-    todosOrder = newTodosOrder
+    currentTodos.forEach(it => it.delete())
+    allTodos = newTodos
+    currentTodos = newCurrentTodos
 
     tick()
 }
