@@ -72,7 +72,7 @@ async function handleSyncResponse(todosRequest, response) {
 }
 
 const serverUrl = 'http://localhost:2999'
-async function syncTodosForToken(idToken) {
+async function syncTodosForToken(force, idToken) {
     const tds = todos.allTodos
     const todosR = []
     let notSynced = false
@@ -92,8 +92,9 @@ async function syncTodosForToken(idToken) {
         }
     }
 
-    if(!notSynced) return
+    if(!force && !notSynced) return
 
+    stopAutosave = true
     try {
         const response = await fetch(new URL('sync-notes', serverUrl), {
             method: 'PUT',
@@ -108,28 +109,33 @@ async function syncTodosForToken(idToken) {
     catch(e) {
         console.error(e)
     }
+    finally {
+        stopAutosave = false
+        resetAutosave()
+    }
 }
 
-export async function syncTodos() {
+export async function syncTodos(force) {
     const it = auth.useAccount.getState()
     if(!it.ok) return
     const u = it.user
     const idToken = await u.getIdToken(true)
-    await syncTodosForToken(idToken)
+    await syncTodosForToken(force, idToken)
 }
 
 auth.onBeforeLogout(async() => await syncTodos())
 
 auth.useAccount.subscribe(it => {
-    syncTodos()
+    syncTodos(true)
     if(!it.ok) {
         clearLocalTodos()
         todos.setTodos({})
     }
 })
 
-var prevSaveTimer
+var prevSaveTimer, stopAutosave
 function resetAutosave() {
+    if(stopAutosave) return
     clearTimeout(prevSaveTimer)
     prevSaveTimer = setTimeout(syncTodos, 1000)
 }
