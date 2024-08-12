@@ -94,7 +94,7 @@ async function syncTodosForToken(force, idToken) {
 
     if(!force && !notSynced) return
 
-    stopAutosave = true
+    preventAutosave = true
     try {
         const response = await fetch(new URL('sync-notes', serverUrl), {
             method: 'PUT',
@@ -110,8 +110,7 @@ async function syncTodosForToken(force, idToken) {
         console.error(e)
     }
     finally {
-        stopAutosave = false
-        resetAutosave()
+        preventAutosave = false
     }
 }
 
@@ -133,10 +132,16 @@ auth.useAccount.subscribe(it => {
     }
 })
 
-var prevSaveTimer, stopAutosave
+var prevSaveTimer, prevSaveInterval, preventAutosave
+function transitionAutosave() {
+    if(!preventAutosave) syncTodos()
+    prevSaveInterval = setInterval(() => {
+        if(!preventAutosave) syncTodos(true)
+    }, 5000)
+}
 function resetAutosave() {
-    if(stopAutosave) return
     clearTimeout(prevSaveTimer)
-    prevSaveTimer = setTimeout(syncTodos, 1000)
+    clearInterval(prevSaveInterval)
+    prevSaveTimer = setTimeout(transitionAutosave, 1000)
 }
 todos.onTodosChanged(resetAutosave)
