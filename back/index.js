@@ -119,6 +119,7 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
         }
     }
     console.log('Response:', JSON.stringify(result))
+    console.log('')
 
     return s.json(result)
 })

@@ -50,7 +50,6 @@ export function useTodo() {
 export class Todo {
     constructor(id, rev, content, createdAt, local, synced, changed) {
         this.id = id
-        this.rev = rev
         this.createdAt = typeof(createdAt) == 'number' ? new Date(createdAt) : createdAt
         this.deleted = false
         this.local = local

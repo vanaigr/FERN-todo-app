@@ -58,9 +58,9 @@ async function handleSyncResponse(todosRequest, response) {
     const newTodos = {}
     for(const id in result) {
         const r = result[id]
-        const it = orig[id] ?? {}
+        const it = orig[id]
         if(r.content == null) {
-            newTodos[id] = new todos.Todo(id, it.rev, it.contents.content, it.createdAt, false, true, false)
+            newTodos[id] = new todos.Todo(id, it.contents.rev, it.contents.content, it.createdAt, false, true, false)
         }
         else {
             newTodos[id] = new todos.Todo(id, r.rev, r.content, r.createdAt, false, true, false)
@@ -83,12 +83,12 @@ async function syncTodosForToken(force, idToken) {
             todosR.push({ id: it.id })
         }
         else if(it.contents.synced) {
-            todosR.push({ id: it.id, rev: it.rev })
+            todosR.push({ id: it.id, rev: it.contents.rev })
         }
         else {
             notSynced = true
             const contents = it.contents
-            todosR.push({ id: it.id, rev: it.rev, content: contents.content, createdAt: it.createdAt.getTime() })
+            todosR.push({ id: it.id, rev: contents.rev, content: contents.content, createdAt: it.createdAt.getTime() })
         }
     }
 
