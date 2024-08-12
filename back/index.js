@@ -88,7 +88,7 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
         const note = dbNotes[eid]
         if(it.rev != null && it.content != null) {
             console.log('  updated', eid)
-            const newNote = { rev: it.rev, content: it.content, createdAt: it.createdAt }
+            const newNote = { erev: encodeFirebase(it.rev), content: it.content, createdAt: it.createdAt }
             dbNotes[eid] = newNote
             db.ref('notes/' + uid + '/' + eid).set(newNote)
         }
@@ -103,17 +103,18 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
     for(const eid in dbNotes) {
         const id = decodeFirebase(eid)
         const note = dbNotes[eid]
+        const noteRev = decodeFirebase(note.erev)
         const bi = ids[id]
-        if(!bi) {
-            result[id] = { rev: note.rev, content: note.content, createdAt: note.createdAt }
+        if(bi == undefined) {
+            result[id] = { rev: noteRev, content: note.content, createdAt: note.createdAt }
         }
         else {
             const it = body[bi]
-            if(it.rev === note.rev) {
+            if(it.rev === noteRev) {
                 result[id] = {}
             }
             else {
-                result[id] = { rev: note.rev, content: note.content, createdAt: note.createdAt }
+                result[id] = { rev: noteRev, content: note.content, createdAt: note.createdAt }
             }
         }
     }

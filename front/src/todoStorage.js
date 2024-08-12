@@ -123,3 +123,11 @@ auth.useAccount.subscribe(it => {
         todos.setTodos({})
     }
 })
+
+var prevSaveTimer
+function resetAutosave() {
+    console.log('!')
+    clearTimeout(prevSaveTimer)
+    prevSaveTimer = setTimeout(syncTodos, 1000)
+}
+todos.onTodosChanged(resetAutosave)
