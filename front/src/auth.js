@@ -16,6 +16,7 @@ const app = initializeApp(firebaseConfig)
 const auth = firebaseAuth.getAuth(app)
 
 export const useAccount = create((set) => ({}))
+const beforeLogout = []
 
 export function login() {
     firebaseAuth.signInWithPopup(auth, new firebaseAuth.GoogleAuthProvider())
@@ -30,6 +31,19 @@ firebaseAuth.onAuthStateChanged(auth, user => {
     }
 })
 
-export function logout() {
+export async function logout() {
+    for(let i = 0; i < beforeLogout.length; i++) {
+        const it = beforeLogout[i]
+        try {
+            await it()
+        }
+        catch(e) {
+            console.error(e)
+        }
+    }
     firebaseAuth.signOut(auth)
+}
+
+export function onBeforeLogout(cb) {
+    beforeLogout.push(cb)
 }

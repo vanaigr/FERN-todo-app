@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import * as todos from "./todos.js"
+import * as auth from "./auth.js"
 
 var savedTick
 todos.onTodosChanged((tick) => {
@@ -13,6 +14,10 @@ todos.onTodosChanged((tick) => {
     localStorage.setItem('todos', JSON.stringify(res))
     savedTick = tick
 })
+
+function clearLocalTodos() {
+    localStorage.removeItem('todos')
+}
 
 export function loadLocalTodos() {
     try {
@@ -68,7 +73,7 @@ async function handleSyncResponse(todosRequest, response) {
 }
 
 const serverUrl = 'http://localhost:2999'
-export async function syncTodos(idToken) {
+async function syncTodosForToken(idToken) {
     const tds = todos.allTodos
     const todosR = []
     for(const id in tds) {
@@ -86,7 +91,6 @@ export async function syncTodos(idToken) {
     }
 
     try {
-        console.log(idToken)
         const response = await fetch(new URL('sync-notes', serverUrl), {
             method: 'PUT',
             headers: {
@@ -101,3 +105,21 @@ export async function syncTodos(idToken) {
         console.error(e)
     }
 }
+
+export async function syncTodos() {
+    const it = auth.useAccount.getState()
+    if(!it.ok) return
+    const u = it.user
+    const idToken = await u.getIdToken(true)
+    await syncTodosForToken(idToken)
+}
+
+auth.onBeforeLogout(async() => await syncTodos())
+
+auth.useAccount.subscribe(it => {
+    syncTodos()
+    if(!it.ok) {
+        clearLocalTodos()
+        todos.setTodos({})
+    }
+})
