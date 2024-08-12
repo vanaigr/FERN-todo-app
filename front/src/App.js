@@ -49,7 +49,9 @@ function formatTodoDate(date) {
 
 function Todo({ todo }) {
     const [isSelected, setSelected] = useIsTodoSelected(todo.id)
-    const content = todo.useContents(it => it.content.substring(0, 60))
+    const contents = todo.useContents(it => it)
+    const content = contents.content.substring(0, 60)
+    const isSynced = contents.syncedState == todos.syncStatus.synced
 
     var desc
     if(!content) {
@@ -61,7 +63,10 @@ function Todo({ todo }) {
 
     return (
         <div onClick={setSelected} className={`todo ${isSelected ? 'todo-selected' : ''}`}>
-            <div className="date">{formatTodoDate(todo.createdAt)}</div>
+            <div className="todo-top-bar">
+                <div className="sync-icon" data-synced={isSynced}></div>
+                <div className="date">{formatTodoDate(todo.createdAt)}</div>
+            </div>
             {desc}
         </div>
     )

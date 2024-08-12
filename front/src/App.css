@@ -60,7 +60,26 @@ html, body {
     text-overflow: ellipsis;
 }
 
-.todo > .date {
+.todo-top-bar {
+    display: flex;
+}
+
+.todo-top-bar > .sync-icon {
+    margin: 0.2em;
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+}
+
+.todo-top-bar > .sync-icon[data-synced="true"] {
+    background: #6cc52b;
+}
+.todo-top-bar > .sync-icon[data-synced="false"] {
+    background: red;
+}
+
+.todo-top-bar > .date {
+    flex-grow: 1;
     text-align: right;
 }
 

@@ -59,11 +59,11 @@ export class Todo {
         this.rev = rev
         this.createdAt = typeof(createdAt) == 'number' ? new Date(createdAt) : createdAt
         this.useContents = create(set => ({
-            content, rev,
+            content, rev, syncedState,
             updContent: (newContent) => set({ content: newContent, rev: genUUID() }),
+            updSyncedState: (newState) => set({ syncedState: newState }),
         }))
         this._unsubContents = this.useContents.subscribe(todosChanged)
-        this.syncedState = syncedState
         this.deleted = false
     }
 
