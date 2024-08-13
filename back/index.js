@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const app = express()
+const path = require('path')
 
 const firebaseAdmin = require('firebase-admin')
 const accKey = require('./secrets/serviceAccountKey.json')
@@ -12,6 +13,8 @@ const firebaseApp = firebaseAdmin.initializeApp({
 
 const db = firebaseApp.database()
 const auth = firebaseApp.auth()
+
+const websitePath = path.join(__dirname, '../front/build')
 
 app.use(cors({ origin: 'http://localhost:3000' }))
 
@@ -122,6 +125,11 @@ app.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
     console.log('')
 
     return s.json(result)
+})
+
+app.use(express.static(websitePath))
+app.use('/', (q, s) => {
+    s.sendFile(path.join(websitePath, 'index.html'))
 })
 
 app.listen(2999, () => {

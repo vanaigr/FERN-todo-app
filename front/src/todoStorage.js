@@ -71,7 +71,7 @@ async function handleSyncResponse(todosRequest, response) {
     todos.setTodos(newTodos)
 }
 
-const serverUrl = 'http://localhost:2999'
+const serverUrl = window.location.origin // 'http://localhost:2999'
 async function syncTodosForToken(force, idToken) {
     const tds = todos.allTodos
     const todosR = []
@@ -96,7 +96,7 @@ async function syncTodosForToken(force, idToken) {
 
     preventAutosave = true
     try {
-        const response = await fetch(new URL('sync-notes', serverUrl), {
+        const response = await fetch(new URL('api/sync-notes', serverUrl), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
