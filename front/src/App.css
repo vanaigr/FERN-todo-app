@@ -43,6 +43,7 @@ html, body {
 .edit-area {
     padding: 0.5em;
     box-sizing: border-box;
+    outline: none;
 }
 
 .todo-buttons {
