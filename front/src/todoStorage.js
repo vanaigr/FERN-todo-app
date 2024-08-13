@@ -122,15 +122,13 @@ export async function syncTodos(force) {
     await syncTodosForToken(force, idToken)
 }
 
-auth.onBeforeLogout(async() => await syncTodos())
-
-auth.useAccount.subscribe(it => {
-    syncTodos(true)
-    if(!it.ok) {
-        clearLocalTodos()
-        todos.setTodos({})
-    }
+auth.onBeforeLogout(async() => {
+    await syncTodos()
+    clearLocalTodos()
+    todos.setTodos({})
 })
+
+auth.useAccount.subscribe(it => syncTodos(true))
 
 var prevSaveTimer, prevSaveInterval, preventAutosave
 function transitionAutosave() {
