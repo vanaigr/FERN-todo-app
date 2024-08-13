@@ -99,13 +99,22 @@ function ContentEditable({ value, onInput, className, contentEditable, hint }) {
     const thisRef = R.useRef(null)
 
     R.useLayoutEffect(() => {
-        if (thisRef.current.textContent !== value) {
-            thisRef.current.textContent = value
+        if (thisRef.current.innerText !== value) {
+            thisRef.current.innerText = value ?? ''
         }
     })
 
+    function upd(event) {
+        try {
+            onInput(event.target.innerText)
+        }
+        catch(e) {
+            console.error(e)
+        }
+    }
+
     return (
-        <div className={className} ref={thisRef} data-hint={hint} onInput={event => onInput(event.target.textContent)}
+        <div className={className} ref={thisRef} data-hint={hint} onBlur={event => onInput(event.target.innerText)}
             contentEditable={contentEditable ?? true}
         />
     );
