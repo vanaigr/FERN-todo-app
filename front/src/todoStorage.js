@@ -9,9 +9,9 @@ todos.onTodosChanged((tick) => {
     for(var key in todos.allTodos) {
         const it = todos.allTodos[key]
         const contents = it.contents
-        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.contents.SyncStatus])
+        res.push([it.id, contents.content, contents.rev, it.createdAt.getTime(), it.deleted ? 1 : 0, it.contents.SyncStatus])
     }
-    localStorage.setItem('todos', JSON.stringify({ ver: 1, res }))
+    localStorage.setItem('todos', JSON.stringify({ ver: 2, res }))
     savedTick = tick
 })
 
@@ -23,23 +23,21 @@ export function loadLocalTodos() {
     try {
         const newTodosJ = JSON.parse(localStorage.getItem('todos'))
         if(newTodosJ == null) return
-        if(newTodosJ.ver !== 1) {
+        if(newTodosJ.ver !== 2) {
             localStorage.removeItem('todos')
             return
         }
-        const newTodos = {}
+        const newData = {}
         for(var i = 0; i < newTodosJ.length; i++) {
             const it = newTodosJ[i]
-            const todo = new todos.Todo(it[0], it[1], it[2], new Date(it[3]), it[5], false, it[6])
-            if(it[4]) todo.delete()
-            newTodos[todo.id] = todo
+            newData[it[0]] = { content: it[1], rev: it[2], createdAt: new Date(it[3]), deleted: it[4], syncState: it[5] }
         }
 
         const newChangedTick = todos.getTodosChangedTick() + 1
         const prevSavedTick = savedTick
         savedTick = newChangedTick
         try {
-            todos.setTodos(newTodos)
+            todos.setTodosData(newData)
         }
         catch(e) {
             savedTick = prevSavedTick
@@ -59,26 +57,22 @@ async function handleSyncResponse(todosRequest, response) {
         return console.error("Could not sync: " + (typeof(result) == 'object' ? JSON.stringify(result) : result))
     }
 
-    const newTodos = {}
+    const newData = {}
     for(const id in result) {
         const r = result[id]
         const it = orig[id]
         if(r.content == null) {
-            delete orig[id]
-            newTodos[id] = it
-            it.contents.markSynced()
+            newData[id] = { syncState: todos.SyncStatus.synced }
         }
         else if(it) {
-            delete orig[id]
-            newTodos[id] = it
-            it.contents.makeSynced(r.content, r.rev)
+            newData[id] = { content: r.content, rev: r.rev, syncState: todos.SyncStatus.synced }
         }
         else {
-            newTodos[id] = new todos.createTodo(id, r.rev, r.content, new Date(r.createdAt), todos.SyncStatus.synced)
+            newData[id] = { content: r.content, rev: r.rev, createdAt: new Date(r.createdAt), syncState: todos.SyncStatus.synced }
         }
     }
 
-    todos.setTodos(newTodos)
+    todos.setTodosData(newData)
 }
 
 const local = true
@@ -137,7 +131,7 @@ export async function syncTodos(force) {
 auth.onBeforeLogout(async() => {
     await syncTodos()
     clearLocalTodos()
-    todos.setTodos({})
+    todos.setTodosData({})
 })
 
 auth.useAccount.subscribe(it => syncTodos(true))

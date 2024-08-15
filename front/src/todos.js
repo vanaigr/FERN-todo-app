@@ -81,12 +81,6 @@ export function createTodo(id, rev, content, createdAt, syncState) {
             rev: genUUID(),
             syncState: SyncStatus.toModified(cur.syncState),
         })),
-        markSynced: () => set({ syncState: SyncStatus.synced }),
-        makeSynced: (newContent, newRev) => set({
-            content: newContent,
-            rev: newRev,
-            syncState: SyncStatus.synced,
-        }),
     }))
     todo._unsubContents = todo.useContents.subscribe(todosChanged)
 
@@ -111,17 +105,62 @@ export function removeTodo(id) {
     tick()
 }
 
-export function setTodos(newTodos) {
-    const newCurrentTodos = []
-    for(var id in newTodos) {
-        const todo = newTodos[id]
-        if(!todo.deleted) newCurrentTodos.push(todo)
+function setFromOther(dest, prop, src) {
+    if(src.hasOwnProperty(prop)) {
+        dest[prop] = src[prop]
     }
+}
+
+export function setTodosData(newData) {
+    console.log('# of old todos:', Object.keys(allTodos).length, '# of new todos:', Object.keys(newData).length)
+
+    const newTodos = {}
+    const newCurrentTodos = []
+
+    var created = 0, preserved = 0, modified = 0, deleted = 0
+
+    for(let id in newData) {
+        const it = newData[id]
+        const orig = allTodos[id]
+        let todo
+        if(orig == null) {
+            todo = createTodo(id, it.rev, it.content, it.createdAt, it.syncState)
+            created++
+        }
+        else {
+            delete allTodos[id]
+            todo = orig
+
+            setFromOther(todo, 'createdAt', it)
+
+            const oldState = todo.contents
+            const newState = { ...oldState }
+            setFromOther(newState, 'content', it)
+            setFromOther(newState, 'rev', it)
+            setFromOther(newState, 'syncState', it)
+            if(oldState.content !== newState.content || oldState.rev !== newState.rev || oldState.syncState !== newState.syncState) {
+                todo.useContents.setState(newState)
+                modified++
+            }
+            else {
+                preserved++
+            }
+        }
+
+        if(todo.deleted) todo.delete()
+        else newCurrentTodos.push(todo)
+        newTodos[id] = todo
+    }
+
+    for(let id in allTodos) {
+        deleted++
+        allTodos[id].delete()
+    }
+
+    console.log('created:', created, 'preseved:', preserved, 'modified:', modified, 'deleted:', deleted)
+
     newCurrentTodos.sort((a, b) => a.createdAt - b.createdAt)
 
-    for(var key in allTodos) {
-        allTodos[key].delete()
-    }
     allTodos = newTodos
     currentTodos = newCurrentTodos
     tick()
