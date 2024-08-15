@@ -113,7 +113,7 @@ router.put('/sync-notes', express.json(), handleAuth, async function(q, s) {
                 result[id] = {}
             }
             else {
-                result[id] = { rev: noteRev, content: note.content, createdAt: note.createdAt }
+                result[id] = { rev: noteRev, content: note.content }
             }
         }
     }

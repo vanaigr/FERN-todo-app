@@ -51,7 +51,7 @@ function Todo({ todo }) {
     const [isSelected, setSelected] = useIsTodoSelected(todo.id)
     const contents = todo.useContents(it => it)
     const content = contents.content.substring(0, 60)
-    const isSynced = contents.synced
+    const isSynced = contents.syncState === todos.SyncStatus.synced
 
     var desc
     if(!content) {
@@ -95,43 +95,22 @@ function Todos() {
     </div>
 }
 
-function ContentEditable({ value, onInput, className, contentEditable, hint }) {
-    const thisRef = R.useRef(null)
-
-    R.useLayoutEffect(() => {
-        if (thisRef.current.innerText !== value) {
-            thisRef.current.innerText = value ?? ''
-        }
-    })
-
-    function upd(event) {
-        try {
-            onInput(event.target.innerText)
-        }
-        catch(e) {
-            console.error(e)
-        }
-    }
-
-    return (
-        <div className={className} ref={thisRef} data-hint={hint} onBlur={event => onInput(event.target.innerText)}
-            contentEditable={contentEditable ?? true}
-        />
-    );
-}
-
 function TodoEditArea({ uid }) {
     if(uid === null) {
-        return <ContentEditable className="edit-area hint" hint="Select a note on the right..." contentEditable="false" />
+        return <div className="edit-area hint" data-hint="Select a note on the right..." contentEditable="false" />
     }
     // note: hook is different per id, so this is a separate component to avoid bugs
     const contents = todos.allTodos[uid].useContents(it => it)
 
-    function changed(content) {
-        contents.updContent(content)
+    function updContent(it) {
+        if(!it) return
+        const content = contents.content
+        if (it.innerText === content) return
+        it.innerText = content ?? ''
     }
 
-    return <ContentEditable className="edit-area hint" hint="Type here..." onInput={changed} value={contents.content} />
+    return <div className={"edit-area hint"} ref={updContent} data-hint="Type here..."
+        onInput={event => contents.updContent(event.target.innerText)} contentEditable={true} />
 }
 
 function EditArea() {

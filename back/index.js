@@ -5,7 +5,7 @@ const app = express()
 const path = require('path')
 const websitePath = path.join(__dirname, '../front/build')
 
-// app.use(cors({ origin: 'http://localhost:3000' }))
+app.use(cors({ origin: 'http://localhost:3000' }))
 app.use('/api', require('./api.js'))
 app.use(express.static(websitePath))
 app.use('/', (q, s) => {

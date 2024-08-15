@@ -9,9 +9,9 @@ todos.onTodosChanged((tick) => {
     for(var key in todos.allTodos) {
         const it = todos.allTodos[key]
         const contents = it.contents
-        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.local, it.contents.changed])
+        res.push([it.id, contents.rev, contents.content, it.createdAt.getTime(), it.deleted ? 1 : 0, it.contents.SyncStatus])
     }
-    localStorage.setItem('todos', JSON.stringify(res))
+    localStorage.setItem('todos', JSON.stringify({ ver: 1, res }))
     savedTick = tick
 })
 
@@ -23,6 +23,10 @@ export function loadLocalTodos() {
     try {
         const newTodosJ = JSON.parse(localStorage.getItem('todos'))
         if(newTodosJ == null) return
+        if(newTodosJ.ver !== 1) {
+            localStorage.removeItem('todos')
+            return
+        }
         const newTodos = {}
         for(var i = 0; i < newTodosJ.length; i++) {
             const it = newTodosJ[i]
@@ -60,18 +64,26 @@ async function handleSyncResponse(todosRequest, response) {
         const r = result[id]
         const it = orig[id]
         if(r.content == null) {
-            newTodos[id] = new todos.Todo(id, it.contents.rev, it.contents.content, it.createdAt, false, true, false)
+            delete orig[id]
+            newTodos[id] = it
+            it.contents.markSynced()
+        }
+        else if(it) {
+            delete orig[id]
+            newTodos[id] = it
+            it.contents.makeSynced(r.content, r.rev)
         }
         else {
-            newTodos[id] = new todos.Todo(id, r.rev, r.content, r.createdAt, false, true, false)
+            newTodos[id] = new todos.createTodo(id, r.rev, r.content, new Date(r.createdAt), todos.SyncStatus.synced)
         }
-
     }
 
     todos.setTodos(newTodos)
 }
 
-const serverUrl = window.location.origin // 'http://localhost:2999'
+const local = true
+const serverUrl = local ? 'http://localhost:2999' : window.location.origin
+
 async function syncTodosForToken(force, idToken) {
     const tds = todos.allTodos
     const todosR = []
@@ -82,13 +94,13 @@ async function syncTodosForToken(force, idToken) {
             notSynced = true
             todosR.push({ id: it.id })
         }
-        else if(it.contents.synced) {
-            todosR.push({ id: it.id, rev: it.contents.rev })
-        }
-        else {
+        else if(todos.SyncStatus.shouldSync(it.contents.syncState)) {
             notSynced = true
             const contents = it.contents
             todosR.push({ id: it.id, rev: contents.rev, content: contents.content, createdAt: it.createdAt.getTime() })
+        }
+        else {
+            todosR.push({ id: it.id, rev: it.contents.rev })
         }
     }
 

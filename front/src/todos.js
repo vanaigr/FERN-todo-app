@@ -48,22 +48,7 @@ export function useTodo() {
 }
 
 export class Todo {
-    constructor(id, rev, content, createdAt, local, synced, changed) {
-        this.id = id
-        this.createdAt = typeof(createdAt) == 'number' ? new Date(createdAt) : createdAt
-        this.deleted = false
-        this.local = local
-        this.useContents = create(set => ({
-            content, rev, synced, changed,
-            updContent: (newContent) => set({
-                content: newContent,
-                rev: genUUID(),
-                synced: false,
-                changed: false,
-            }),
-        }))
-        this._unsubContents = this.useContents.subscribe(todosChanged)
-    }
+    // { id, createdAt, rev, deleted, useContents, _unsubContents }
 
     delete() {
         this.deleted = true
@@ -75,12 +60,42 @@ export class Todo {
     }
 }
 
-export function addTodo() {
-    const id = genUUID()
-    const rev = genUUID()
-    const todo = new Todo(id, rev, '', new Date(), true, false, true)
+export const SyncStatus = {
+    local: 0b01,
+    synced: 0b10,
+    syncedChanged: 0b11,
+    shouldSync: (it) => (it & 0b01) !== 0,
+    toModified: (it) => it | 0b01,
+}
 
-    allTodos[id] = todo
+export function createTodo(id, rev, content, createdAt, syncState) {
+    var todo = new Todo()
+
+    todo.id = id
+    todo.createdAt = createdAt
+    todo.deleted = false
+    todo.useContents = create(set => ({
+        content, rev, syncState,
+        updContent: (newContent) => set(cur => ({
+            content: newContent,
+            rev: genUUID(),
+            syncState: SyncStatus.toModified(cur.syncState),
+        })),
+        markSynced: () => set({ syncState: SyncStatus.synced }),
+        makeSynced: (newContent, newRev) => set({
+            content: newContent,
+            rev: newRev,
+            syncState: SyncStatus.synced,
+        }),
+    }))
+    todo._unsubContents = todo.useContents.subscribe(todosChanged)
+
+    return todo
+}
+
+export function addTodo() {
+    const todo = createTodo(genUUID(), genUUID(), '', new Date(), SyncStatus.local)
+    allTodos[todo.id] = todo
     currentTodos.push(todo)
     tick()
     return todo
@@ -89,7 +104,7 @@ export function addTodo() {
 export function removeTodo(id) {
     const todo = allTodos[id]
     if(!todo) return
-    if(todo.local) delete allTodos[id]
+    if(todo.syncState === SyncStatus.local) delete allTodos[id]
     const i = currentTodos.indexOf(todo)
     if(i !== -1) currentTodos.splice(i, 1)
     todo.delete()
@@ -104,7 +119,9 @@ export function setTodos(newTodos) {
     }
     newCurrentTodos.sort((a, b) => a.createdAt - b.createdAt)
 
-    currentTodos.forEach(it => it.delete())
+    for(var key in allTodos) {
+        allTodos[key].delete()
+    }
     allTodos = newTodos
     currentTodos = newCurrentTodos
     tick()
