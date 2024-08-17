@@ -125,7 +125,7 @@ export async function syncTodos(force) {
     const it = auth.useAccount.getState()
     if(!it.ok) return
     const u = it.user
-    const idToken = await u.getIdToken(true)
+    const idToken = await u.getIdToken()
     await syncTodosForToken(force, idToken)
 }
 
