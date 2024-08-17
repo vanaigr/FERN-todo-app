@@ -27,9 +27,10 @@ export function loadLocalTodos() {
             localStorage.removeItem('todos')
             return
         }
+        const stored = newTodosJ.res
         const newData = {}
-        for(var i = 0; i < newTodosJ.length; i++) {
-            const it = newTodosJ[i]
+        for(var i = 0; i < stored.length; i++) {
+            const it = stored[i]
             newData[it[0]] = { content: it[1], rev: it[2], createdAt: new Date(it[3]), deleted: it[4], syncState: it[5] }
         }
 
