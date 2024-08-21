@@ -1,22 +1,21 @@
-import { create } from "zustand"
+import * as zustand from "zustand"
 import UUID from "pure-uuid"
 
-const serverUrl = 'http://localhost:2999'
+// const serverUrl = 'http://localhost:2999'
 
-
-export var currentTodos = []
-export var allTodos = {}
+export var currentTodos: Todo[] = []
+export var allTodos: Record<TodoUUID, Todo> = {}
 
 // note: tick allows to mutate todos list but still trigger updates when needed
-const useTodosTick = create(set => ({
-    tick: 0,
-    updated: () => set(it => ({ tick: it.tick + 1 }))
-}))
+const useTodosTick = zustand.create<number>((_set) => 0)
 function tick() {
-    useTodosTick.getState().updated()
+    useTodosTick.setState(it => it + 1)
 }
 
-const todosChangedCallbacks = []
+export type TodosListChangedCb = () => void
+export type TodosChangedCb = (changedTick: number) => void
+
+const todosChangedCallbacks: TodosChangedCb[] = []
 var todosChangedTick = 0 // tick for every update, not just the list
 function todosChanged() {
     todosChangedTick++
@@ -30,16 +29,16 @@ export function getTodosChangedTick() {
     return todosChangedTick
 }
 
-export function onTodosListChanged(cb) {
+export function onTodosListChanged(cb: TodosListChangedCb) {
     return useTodosTick.subscribe(() => cb())
 }
 
-export function onTodosChanged(cb) {
+export function onTodosChanged(cb: TodosChangedCb) {
     todosChangedCallbacks.push(cb)
 }
 
 export function useCurrentTodos() {
-    useTodosTick(it => it.tick)
+    useTodosTick(it => it)
     return currentTodos
 }
 
@@ -47,8 +46,30 @@ export function useTodo() {
 
 }
 
+export enum SyncStatus {
+    local = 0b01,
+    synced = 0b10,
+    syncedChanged = 0b11,
+}
+
+export const SyncStatusF = {
+    shouldSync: (it: SyncStatus): boolean => (it & 0b01) !== 0,
+    toModified: (it: SyncStatus): SyncStatus => it | 0b01,
+} as const
+
+export type TodoUUID = string
+export type TodoContents = {
+    content: string, rev: TodoUUID,
+    syncState: SyncStatus,
+    updContent: (newContent: string) => void
+}
+
 export class Todo {
-    // { id, createdAt, rev, deleted, useContents, _unsubContents }
+    id!: TodoUUID
+    createdAt!: Date
+    deleted!: boolean
+    useContents!: zustand.UseBoundStore<zustand.StoreApi<TodoContents>>
+    _unsubContents!: () => void
 
     delete() {
         this.deleted = true
@@ -60,26 +81,18 @@ export class Todo {
     }
 }
 
-export const SyncStatus = {
-    local: 0b01,
-    synced: 0b10,
-    syncedChanged: 0b11,
-    shouldSync: (it) => (it & 0b01) !== 0,
-    toModified: (it) => it | 0b01,
-}
-
-export function createTodo(id, rev, content, createdAt, syncState) {
+export function createTodo(id: TodoUUID, rev: TodoUUID, content: string, createdAt: Date, syncState: SyncStatus) {
     var todo = new Todo()
 
     todo.id = id
     todo.createdAt = createdAt
     todo.deleted = false
-    todo.useContents = create(set => ({
+    todo.useContents = zustand.create<TodoContents>(set => ({
         content, rev, syncState,
         updContent: (newContent) => set(cur => ({
             content: newContent,
             rev: genUUID(),
-            syncState: SyncStatus.toModified(cur.syncState),
+            syncState: SyncStatusF.toModified(cur.syncState),
         })),
     }))
     todo._unsubContents = todo.useContents.subscribe(todosChanged)
@@ -95,35 +108,40 @@ export function addTodo() {
     return todo
 }
 
-export function removeTodo(id) {
+export function removeTodo(id: TodoUUID) {
     const todo = allTodos[id]
     if(!todo) return
-    if(todo.syncState === SyncStatus.local) delete allTodos[id]
+    if(todo.contents.syncState === SyncStatus.local) delete allTodos[id]
     const i = currentTodos.indexOf(todo)
     if(i !== -1) currentTodos.splice(i, 1)
     todo.delete()
     tick()
 }
-
-function setFromOther(dest, prop, src) {
+function setFromOther(dest: any, prop: any, src: any) {
     if(src.hasOwnProperty(prop)) {
         dest[prop] = src[prop]
     }
 }
 
-export function setTodosData(newData) {
+export type TodoData = Partial<{ rev: TodoUUID , content: string , createdAt: Date, syncState: SyncStatus, deleted: boolean }>
+
+export function setTodosData(newData: Record<TodoUUID, TodoData>) {
     console.log('# of old todos:', Object.keys(allTodos).length, '# of new todos:', Object.keys(newData).length)
 
-    const newTodos = {}
+    const newTodos: typeof allTodos = {}
     const newCurrentTodos = []
 
     var created = 0, preserved = 0, modified = 0, deleted = 0
 
     for(let id in newData) {
         const it = newData[id]
-        const orig = allTodos[id]
-        let todo
+        const orig: Todo | undefined = allTodos[id]
+        let todo: Todo
         if(orig == null) {
+            if(it.rev == null || it.content == null || it.createdAt == null || it.syncState == null) {
+                console.error("Todo " + id + " is new and should have all properties ", JSON.stringify(it))
+                continue
+            }
             todo = createTodo(id, it.rev, it.content, it.createdAt, it.syncState)
             created++
         }
@@ -145,6 +163,8 @@ export function setTodosData(newData) {
             else {
                 preserved++
             }
+
+            if(todo.deleted) todo.delete
         }
 
         if(todo.deleted) todo.delete()
@@ -158,8 +178,7 @@ export function setTodosData(newData) {
     }
 
     console.log('created:', created, 'preseved:', preserved, 'modified:', modified, 'deleted:', deleted)
-
-    newCurrentTodos.sort((a, b) => a.createdAt - b.createdAt)
+    newCurrentTodos.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 
     allTodos = newTodos
     currentTodos = newCurrentTodos

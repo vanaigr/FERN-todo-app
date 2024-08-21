@@ -12,11 +12,14 @@ const firebaseConfig = {
   appId: "1:941573793010:web:feb0f6dd459a9ec6965c6b"
 }
 
+export type LogoutCallback = () => void | Promise<void>
+export type Account = { ok: boolean, user: firebaseAuth.User | null }
+
 const app = initializeApp(firebaseConfig)
 const auth = firebaseAuth.getAuth(app)
 
-export const useAccount = create((set) => ({}))
-const beforeLogout = []
+export const useAccount = create<Account>((_set) => ({ ok: false, user: null }))
+const beforeLogout: Array<LogoutCallback> = []
 
 export function login() {
     firebaseAuth.signInWithPopup(auth, new firebaseAuth.GoogleAuthProvider())
@@ -44,6 +47,6 @@ export async function logout() {
     firebaseAuth.signOut(auth)
 }
 
-export function onBeforeLogout(cb) {
+export function onBeforeLogout(cb: LogoutCallback) {
     beforeLogout.push(cb)
 }

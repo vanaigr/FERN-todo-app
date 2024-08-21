@@ -1,4 +1,3 @@
-import * as R from 'react'
 import './App.css'
 import * as auth from './auth'
 import * as todos from './todos'
@@ -13,7 +12,7 @@ function AccountHeader() {
     }
     else {
         child = (<>
-            Signed in as {account.user.displayName}
+            Signed in as {account.user?.displayName}
             <div className="v-bar" />
             <button onClick={auth.logout}>log out</button>
         </>)
@@ -22,7 +21,7 @@ function AccountHeader() {
     return <div className="account">{child}</div>
 }
 
-const selectedTodoStorage = create(set => null)
+const selectedTodoStorage = create<todos.TodoUUID | null>(set => null)
 todos.onTodosListChanged(() => {
     const cur = selectedTodoStorage.getState()
     if(cur) {
@@ -30,13 +29,13 @@ todos.onTodosListChanged(() => {
         if(todo === undefined || todo.deleted) selectedTodoStorage.setState(null)
     }
 })
-function useIsTodoSelected(id) {
+function useIsTodoSelected(id: todos.TodoUUID) {
     const isSelected = selectedTodoStorage(it => it === id)
     const setSelected = () => selectedTodoStorage.setState(id)
-    return[isSelected, setSelected]
+    return [isSelected, setSelected] satisfies [isSelected: boolean, setSelected: () => void]
 }
 
-function formatTodoDate(date) {
+function formatTodoDate(date: Date) {
     const options = {
         day: '2-digit',
         month: 'short',
@@ -44,10 +43,10 @@ function formatTodoDate(date) {
         hour: '2-digit',
         minute: '2-digit',
     }
-    return date.toLocaleString(undefined, options)
+    return date.toLocaleString(undefined, options as any)
 }
 
-function Todo({ todo }) {
+function Todo({ todo }: { todo: todos.Todo }) {
     const [isSelected, setSelected] = useIsTodoSelected(todo.id)
     const contents = todo.useContents(it => it)
     const content = contents.content.substring(0, 60)
@@ -74,7 +73,7 @@ function Todo({ todo }) {
 
 function DeleteButton() {
     const selectedId = selectedTodoStorage(it => it)
-    return <button disabled={selectedId == null} onClick={() => todos.removeTodo(selectedId)}>Delete</button>
+    return <button disabled={selectedId == null} onClick={() => { if(selectedId) todos.removeTodo(selectedId) }}>Delete</button>
 }
 
 function Todos() {
@@ -95,14 +94,14 @@ function Todos() {
     </div>
 }
 
-function TodoEditArea({ uid }) {
+function TodoEditArea({ uid }: { uid: todos.TodoUUID | null }) {
     if(uid === null) {
         return <div className="edit-area hint" data-hint="Select a note on the right..." contentEditable="false" />
     }
     // note: hook is different per id, so this is a separate component to avoid bugs
     const contents = todos.allTodos[uid].useContents(it => it)
 
-    function updContent(it) {
+    function updContent(it: HTMLElement | null) {
         if(!it) return
         const content = contents.content
         if (it.innerText === content) return
@@ -110,7 +109,7 @@ function TodoEditArea({ uid }) {
     }
 
     return <div className={"edit-area hint"} ref={updContent} data-hint="Type here..."
-        onInput={event => contents.updContent(event.target.innerText)} contentEditable={true} />
+        onInput={event => contents.updContent((event.target as HTMLElement).innerText)} contentEditable={true} />
 }
 
 function EditArea() {
