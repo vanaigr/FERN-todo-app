@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import * as UUID from "pure-uuid"
+import UUID from "pure-uuid"
 
 const serverUrl = 'http://localhost:2999'
 

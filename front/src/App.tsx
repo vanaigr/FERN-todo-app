@@ -1,8 +1,8 @@
 import * as R from 'react'
 import './App.css'
-import * as auth from './auth.js'
-import * as todos from './todos.js'
-import { create, useShallow } from "zustand"
+import * as auth from './auth'
+import * as todos from './todos'
+import { create } from "zustand"
 
 function AccountHeader() {
     const account = auth.useAccount(it => it)

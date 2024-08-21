@@ -1,6 +1,7 @@
 {
-  "compilerOptions": {
-    "sourceMap": true,
-    "module": "es6"
-  }
+  "files": [],
+  "references": [
+    { "path": "./src/tsconfig.app.json" },
+    { "path": "./config/tsconfig.node.json" }
+  ]
 }
