@@ -1,10 +1,17 @@
-import type { UserConfig } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default {
-    root: './src',
-    plugins: [react()],
-    build: {
-        outDir: '../dist'
-    },
-} satisfies UserConfig
+export default defineConfig(({ command }) => {
+    let server_url = command === 'serve' ? 'http://localhost:2999' : '/'
+
+    return {
+        root: './src',
+        plugins: [react()],
+        define: {
+            __SERVER_URL__: JSON.stringify(server_url),
+        },
+        build: {
+            outDir: '../dist'
+        },
+    }
+})

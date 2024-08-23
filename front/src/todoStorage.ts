@@ -92,8 +92,7 @@ async function handleSyncResponse(_todosRequest: TodoRequest[], response: Respon
     todos.setTodosData(newData)
 }
 
-const local = true
-const serverUrl = local ? 'http://localhost:2999' : window.location.origin
+export const serverUrl = __SERVER_URL__
 
 async function syncTodosForToken(force: boolean, idToken: string) {
     const tds = todos.allTodos
