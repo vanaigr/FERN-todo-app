@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite -c ./config/vite.config.ts",
-    "lint": "eslint -c ./config/eslint.config.js .",
-    "build": "node ./config/build.js",
-    "preview": "vite -c ./config/vite.config.ts preview"
+    "dev": "node ./config/commands.js dev",
+    "l": "node ./config/commands.js lint",
+    "p": "node ./config/commands.js preview",
+    "t": "node ./config/commands.js typecheck",
+    "b": "node ./config/commands.js build"
   },
   "dependencies": {
     "firebase": "^10.12.5",

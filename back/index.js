@@ -3,7 +3,7 @@ const cors = require('cors')
 const app = express()
 
 const path = require('path')
-const websitePath = path.join(__dirname, '../front/build')
+const websitePath = path.join(__dirname, '../front/dist')
 
 app.use(cors({ origin: 'http://localhost:3000' }))
 app.use('/api', require('./api.js'))
