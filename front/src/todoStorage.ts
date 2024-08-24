@@ -10,6 +10,10 @@ type SavedTodo = [
     syncState: todos.SyncStatus,
 ]
 
+const enum LocalStorage {
+    currentVersion = 3
+}
+
 var savedTick: number | undefined
 todos.onTodosChanged((tick) => {
     if(tick === savedTick) return
@@ -19,7 +23,7 @@ todos.onTodosChanged((tick) => {
         const contents = it.contents
         res.push([it.id, contents.content, contents.rev, it.createdAt.getTime(), it.deleted ? 1 : 0, it.contents.syncState])
     }
-    localStorage.setItem('todos', JSON.stringify({ ver: 2, res }))
+    localStorage.setItem('todos', JSON.stringify({ ver: LocalStorage.currentVersion, res }))
     savedTick = tick
 })
 
@@ -31,7 +35,7 @@ export function loadLocalTodos() {
     try {
         const newTodosJ = JSON.parse(localStorage.getItem('todos') ?? '{}')
         if(newTodosJ == null) return
-        if(newTodosJ.ver !== 3) {
+        if(newTodosJ.ver !== LocalStorage.currentVersion) {
             localStorage.removeItem('todos')
             return
         }
