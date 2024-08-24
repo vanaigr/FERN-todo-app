@@ -46,8 +46,8 @@ function formatTodoDate(date: Date) {
     return date.toLocaleString(undefined, options as any)
 }
 
-function Todo({ todo }: { todo: todos.Todo }) {
-    const [isSelected, setSelected] = useIsTodoSelected(todo.id)
+function Todo({ id }: { id: todos.TodoUUID }) {
+    const [isSelected, setSelected] = useIsTodoSelected(id)
     const contents = todo.useContents(it => it)
     const content = contents.content.substring(0, 60)
     const isSynced = contents.syncState === todos.SyncStatus.synced
